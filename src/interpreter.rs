@@ -42,6 +42,12 @@ impl SymbolTable {
     }
 }
 
+impl Default for SymbolTable {
+    fn default() -> Self {
+        SymbolTable::new()
+    }
+}
+
 pub fn evaluate_program(
     statements: Vec<Statement>,
     symbols: &mut SymbolTable,

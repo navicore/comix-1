@@ -1,6 +1,6 @@
 use chumsky::Parser;
 use comix::interpreter::{evaluate_program, SymbolTable, Value};
-use comix::parser::{language_parser, Statement};
+use comix::parser::language_parser;
 
 #[test]
 fn test_addition() {

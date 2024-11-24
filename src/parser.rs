@@ -33,14 +33,13 @@ pub fn language_parser() -> impl Parser<char, Vec<Statement>, Error = Simple<cha
         .map(Expr::Text);
 
     // Parse variable references
-    let variable = ident.clone().map(Expr::Variable);
+    let variable = ident.map(Expr::Variable);
 
     // Parse terms (numbers, text, or variables)
     let term = number.or(text).or(variable);
 
     // Parse addition expressions
     let expression = term
-        .clone()
         .then(just('+').padded().ignore_then(term).repeated())
         .foldl(|lhs, rhs| Expr::Add(Box::new(lhs), Box::new(rhs)));
 
