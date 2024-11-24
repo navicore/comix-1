@@ -1,8 +1,7 @@
 use chumsky::prelude::*;
 use chumsky::Parser;
 
-// Define the Abstract Syntax Tree (AST) for your custom language
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Expr {
     Number(i64),
     Text(String),
@@ -10,18 +9,17 @@ pub enum Expr {
     Add(Box<Expr>, Box<Expr>),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Statement {
     Let(String, Expr),
 }
 
-// The parser for the custom language
 pub fn language_parser() -> impl Parser<char, Vec<Statement>, Error = Simple<char>> {
     // Parse identifiers (variable names)
     let ident = text::ident().padded();
 
     // Parse numbers
-    let number = text::digits(10)
+    let number = text::int(10)
         .from_str()
         .unwrapped()
         .padded()
@@ -35,13 +33,14 @@ pub fn language_parser() -> impl Parser<char, Vec<Statement>, Error = Simple<cha
         .map(Expr::Text);
 
     // Parse variable references
-    let variable = ident.map(Expr::Variable);
+    let variable = ident.clone().map(Expr::Variable);
 
     // Parse terms (numbers, text, or variables)
     let term = number.or(text).or(variable);
 
     // Parse addition expressions
     let expression = term
+        .clone()
         .then(just('+').padded().ignore_then(term).repeated())
         .foldl(|lhs, rhs| Expr::Add(Box::new(lhs), Box::new(rhs)));
 
@@ -50,9 +49,13 @@ pub fn language_parser() -> impl Parser<char, Vec<Statement>, Error = Simple<cha
         .ignore_then(ident)
         .then_ignore(just('='))
         .then(expression)
-        .then_ignore(just(';'))
+        .then_ignore(just(';').padded())
         .map(|(name, expr)| Statement::Let(name, expr));
 
-    // Parse multiple statements
-    let_statement.repeated().padded()
+    // Ensure separation of multiple statements
+    let_statement
+        .padded()
+        .separated_by(just('\n').or(just(';')).repeated())
+        .allow_trailing() // Allow trailing semicolons or newlines
+        .padded()
 }
